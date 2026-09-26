@@ -1,0 +1,35 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; color: #eee; font: 15px/1.35 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; overflow: hidden; overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
+#stage { position: fixed; inset: 0; touch-action: none; }
+#video, #still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+body.map #video, body.map #still { visibility: hidden; }
+body.map #stage { background: #151a15; }
+.bar { position: fixed; left: 0; right: 0; display: flex; gap: 6px; padding: 8px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); background: linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.35)); z-index: 5; }
+#topbar { top: 0; padding-top: max(8px, env(safe-area-inset-top)); }
+#bottombar { bottom: 0; padding-bottom: max(8px, env(safe-area-inset-bottom)); background: linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.65)); overflow-x: auto; }
+.bar select { flex: 1; min-width: 0; }
+button, select, input { font: inherit; color: #fff; background: rgba(40,40,40,.9); border: 1px solid #666; border-radius: 10px; padding: 9px 12px; }
+input[type=number] { width: 4.2em; padding: 6px; }
+input[type=checkbox] { width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; }
+button.active { background: #2f8cff; border-color: #2f8cff; }
+button.primary { background: #ff3b30; border-color: #ff3b30; font-weight: bold; }
+#bottombar button { flex: 1 0 auto; }
+#banner { position: fixed; left: 8px; right: 8px; top: calc(62px + env(safe-area-inset-top)); z-index: 6; background: rgba(0,0,0,.78); border: 1px solid #ffd60a; color: #fff; padding: 10px 12px; border-radius: 12px; text-align: center; font-weight: 600; }
+#banner .step { color: #ffd60a; }
+#banner button { margin: 8px 4px 0; padding: 6px 12px; }
+.panel { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); width: min(92vw, 460px); max-height: 82vh; overflow: auto; z-index: 10; background: rgba(20,20,20,.96); border: 1px solid #555; border-radius: 16px; padding: 16px 18px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.panel h1 { font-size: 21px; margin: 0 0 8px; } .panel h2 { font-size: 18px; margin: 0 0 8px; }
+.panel label { display: block; margin: 10px 0; }
+.panel > button { display: block; width: 100%; margin-top: 10px; }
+.panel select { width: 100%; margin-top: 4px; }
+.small { font-size: 13px; color: #bbb; }
+#loupe { position: fixed; z-index: 8; width: 160px; height: 160px; border-radius: 50%; border: 3px solid #ffd60a; box-shadow: 0 4px 20px rgba(0,0,0,.7); pointer-events: none; top: calc(70px + env(safe-area-inset-top)); left: 12px; }
+body.noui .bar, body.noui #banner, body.noui .panel { display: none !important; }
+[hidden] { display: none !important; }
+
+/* Calibration / adjust: hide the bars so every corner of the screen is tappable; banner sits mid-screen (over the table centre, not the corners). */
+body.calib .bar { display: none; }
+body.calib #banner { top: 50%; transform: translateY(-50%); left: 50%; right: auto; width: min(78vw, 420px); translate: -50% 0; background: rgba(0,0,0,.62); }
+
+.kofi{display:inline-block;margin-top:8px;padding:8px 14px;border-radius:8px;background:#29abe0;color:#fff;text-decoration:none;font-weight:600}
