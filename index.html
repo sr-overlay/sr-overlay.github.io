@@ -29,6 +29,7 @@
   <button id="adjustBtn">Adjust</button>
   <button id="flipBtn" title="Swap which edge you're standing at (rotate 180°)">Flip</button>
   <button id="freezeBtn">Freeze</button>
+  <button id="lensBtn" title="Camera lens, zoom and view size">Lens</button>
   <button id="layersBtn">Layers</button>
   <button id="infoBtn">Info</button>
 </footer>
@@ -42,8 +43,22 @@
   <button id="startCamBtn" class="primary">Start camera</button>
   <button id="startMapBtn">Map only (no camera)</button>
   <p id="camMsg" class="small"></p>
+  <p class="small tip">Can't fit the table? Try the wide lens, step back, hold phone higher, or use landscape.</p>
   <p class="small support"><a class="kofi" href="https://ko-fi.com/sroverlay" target="_blank" rel="noopener">☕ Support this free app on Ko-fi</a></p>
   <p class="small">Unofficial fan tool. Not affiliated with or endorsed by Steamforged Games.</p>
+</div>
+
+<div id="lensPanel" class="panel" hidden>
+  <h2>Camera &amp; view</h2>
+  <label>Camera / lens <select id="camSelect"></select></label>
+  <label id="zoomRow" hidden>Zoom <span id="zoomVal" class="small"></span>
+    <input id="zoom" type="range" min="1" max="1" step="0.1" value="1"></label>
+  <div class="segrow">View size
+    <span class="seg" id="viewSeg"><button data-view="1">100%</button><button data-view="0.85">85%</button><button data-view="0.7">70%</button></span></div>
+  <p class="small">A smaller view leaves a margin round the camera picture, so corners that are just out of shot can be dragged past its edge.</p>
+  <p class="small tip">Can't fit the table? Try the wide lens, step back, hold phone higher, or use landscape.</p>
+  <p class="small" id="camInfo"></p>
+  <button class="close">Close</button>
 </div>
 
 <div id="layersPanel" class="panel" hidden>
