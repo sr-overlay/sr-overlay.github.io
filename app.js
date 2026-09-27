@@ -127,13 +127,16 @@
   async function openStream(deviceId) {
     stopStream();
     const gum = c => navigator.mediaDevices.getUserMedia({ audio: false, video: c });
-    const ptz = !!(navigator.mediaDevices.getSupportedConstraints && navigator.mediaDevices.getSupportedConstraints().zoom);
+    let ptz = false;
+    try { ptz = !!(navigator.mediaDevices.getSupportedConstraints && navigator.mediaDevices.getSupportedConstraints().zoom); } catch (e) {}
     const tries = [videoConstraints(deviceId, ptz), videoConstraints(deviceId, false)];
     if (deviceId) tries.push(videoConstraints(null, false));
-    tries.push({ facingMode: { ideal: "environment" } });
+    // Progressively simpler (all "ideal", never exact/min except a chosen deviceId), ending with plain video: true.
+    tries.push({ width: { ideal: 1920 }, height: { ideal: 1440 }, facingMode: { ideal: "environment" } }, { facingMode: "environment" }, true);
     let last;
     for (const c of tries) {
-      try { return await gum(c); } catch (e) { last = e; if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) break; }
+      try { return await gum(c); }
+      catch (e) { last = e; console.warn("getUserMedia failed", e && e.name, c); if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) break; }
     }
     throw last;
   }
@@ -144,7 +147,10 @@
     track = stream.getVideoTracks()[0] || null;
     video.srcObject = stream; await video.play().catch(() => {});
     source = video; frozen = false;
-    setupZoom(); updateCamInfo(); layoutMedia(); syncUI(); draw();
+    // Lens/zoom extras must never break the camera.
+    try { setupZoom(); } catch (e) { console.warn("zoom setup", e); $("zoomRow").hidden = true; }
+    try { updateCamInfo(); } catch (e) {}
+    layoutMedia(); syncUI(); draw();
   }
 
   async function startCamera() {
@@ -155,6 +161,15 @@
       stream = await openStream(cam.deviceId || null);
       await attachStream();
       try { if (navigator.wakeLock) await navigator.wakeLock.request("screen"); } catch (e) {}
+      try { await autoPickLens(); } catch (e) { console.warn("lens auto-pick", e); }
+      if (!state.corners) startCalibration();
+      draw();
+      watchForFrames();
+    } catch (err) {
+      camError(err);
+    }
+  }
+  async function autoPickLens() {
       await refreshDevices();
       // Stored deviceId stale (ids can change)? Find the same lens by label. First run: prefer an ultra-wide back lens.
       const cur = currentDevice();
@@ -162,12 +177,23 @@
       if (cam.label && (!cur || cur.label !== cam.label)) want = camList.find(d => d.label === cam.label);
       else if (!cam.deviceId && !cam.label) want = camList.find(d => ULTRA.test(d.label) && !FRONT.test(d.label));
       if (want && (!cur || want.deviceId !== cur.deviceId)) await switchCamera(want.deviceId, true);
-      if (!state.corners) startCalibration();
-      draw();
-    } catch (err) {
-      msg.textContent = "Couldn't open the camera (" + (err && err.name || err) + "). Showing the map instead.";
-      fallbackToMap();
-    }
+  }
+  // Visible error instead of a blank screen.
+  function camError(err) {
+    const name = err && (err.name || err.message) || String(err);
+    const hint = name === "NotAllowedError" ? " Allow camera access for this site in the browser settings, then reload." :
+                 name === "NotReadableError" ? " Another app may be using the camera." : "";
+    $("camMsg").textContent = "Couldn't open the camera (" + name + ")." + hint + " Showing the map instead.";
+    fallbackToMap();
+  }
+  // Stream opened but no picture (seen on some phones with unusual formats): retry with the simplest request.
+  function watchForFrames() {
+    setTimeout(async () => {
+      if (!stream || video.videoWidth || state.mode !== "camera") return;
+      try { stopStream(); stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "environment" } }); await attachStream(); }
+      catch (e) { camError(e); return; }
+      setTimeout(() => { if (stream && !video.videoWidth) { showBanner("<span class='step'>No camera picture.</span> Pick another camera under Lens, or reload the page.<br><button id='bX'>OK</button>"); $("bX").onclick = () => showBanner(null); } }, 4000);
+    }, 5000);
   }
 
   function currentDevice() {
@@ -205,10 +231,13 @@
       lensDirty = true;
       if (calibrating) { tapped = []; draw(); }
       if (calibrating || adjusting) refreshBanner();
-    } catch (e) { $("camInfo").textContent = "Couldn't switch camera (" + (e && e.name || e) + ")."; }
-    await refreshDevices();
+    } catch (e) {
+      $("camInfo").textContent = "Couldn't switch camera (" + (e && e.name || e) + ").";
+      if (!stream) { try { stream = await openStream(null); await attachStream(); } catch (e2) { camError(e2); } } // don't leave a dead camera
+    }
+    try { await refreshDevices(); } catch (e) {}
   }
-  $("camSelect").onchange = e => switchCamera(e.target.value, false);
+  $("camSelect").onchange = e => switchCamera(e.target.value, false).catch(err => { $("camInfo").textContent = "Couldn't switch camera (" + (err && err.name || err) + ")."; });
 
   function setupZoom() {
     const row = $("zoomRow"), sl = $("zoom");
