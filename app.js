@@ -60,9 +60,9 @@
   $("adjustBtn").onclick = () => { if (!state.corners) return startCalibration(); adjusting ? finishAdjust() : startAdjust(); };
   function startAdjust(prefix) {
     adjusting = true; calibrating = false;
-    showBanner((prefix || "") + "Drag the yellow handles onto the table corners (a magnifier appears while dragging).<br>" +
-      '<button id="bDone" class="primary">Done</button><button id="bFlip">Flip side</button><button id="bRedo">Re-tap corners</button>' + viewBtnHtml());
-    $("bDone").onclick = finishAdjust; bindViewBtn();
+    showBanner(`<div class="bmsg">${prefix || ""}Drag the yellow handles onto the table corners (a magnifier appears while dragging).</div>` +
+      '<div class="brow"><button id="bDone" class="primary">Done</button><button id="bFlip">Flip side</button><button id="bRedo">Re-tap</button></div>' + camToolsHtml());
+    $("bDone").onclick = finishAdjust; bindCamTools();
     $("bFlip").onclick = () => $("flipBtn").onclick();
     $("bRedo").onclick = startCalibration;
     syncUI(); draw();
@@ -85,14 +85,29 @@
   function togglePanel(id) { ["layersPanel", "infoPanel", "lensPanel"].forEach(p => { if (p !== id) $(p).hidden = true; }); $(id).hidden = !$(id).hidden; }
 
   function showBanner(html) { if (!html) { banner.hidden = true; return; } banner.innerHTML = html; banner.hidden = false; placeBanner(); }
-  // While calibrating, the banner normally sits mid-screen (over the table centre). With a letterboxed picture
-  // (e.g. landscape stream on a portrait screen) move it into the empty band above/below the picture instead.
+  // While calibrating/adjusting, the banner is placed where it covers no corner: in an empty letterbox band if there
+  // is one, else top / middle / bottom — whichever overlaps no placed handle and not the area where the next corner
+  // is expected (near corners: lower part of the picture; far corners: upper part).
+  const safeProbe = document.createElement("div");
+  safeProbe.style.cssText = "position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)";
+  document.body.appendChild(safeProbe);
+  function safeInsets() { const cs = getComputedStyle(safeProbe); return [parseFloat(cs.paddingTop) || 0, parseFloat(cs.paddingBottom) || 0]; }
   function placeBanner() {
     banner.style.top = banner.style.transform = banner.style.translate = "";
     if (banner.hidden || !document.body.classList.contains("calib") || state.mode !== "camera") return;
-    const r = viewRect(), [, H] = stageSize(), bh = banner.offsetHeight + 12, below = H - r.y - r.h;
-    const y = r.y >= bh ? (r.y - bh) / 2 + 6 : below >= bh ? r.y + r.h + (below - bh) / 2 + 6 : null;
-    if (y != null) { banner.style.top = y + "px"; banner.style.transform = "none"; banner.style.translate = "-50% 0"; }
+    const r = viewRect(), [, H] = stageSize(), bh = banner.offsetHeight, below = H - r.y - r.h;
+    const [sat, sab] = safeInsets(), top = r.y - sat, bot = below - sab, pad = 8;
+    const pts = calibrating ? tapped.map(toPx) : (cornersPx() || []);
+    const zone = calibrating && tapped.length < 4 ? (tapped.length < 2 ? [r.y + 0.55 * r.h, r.y + r.h] : [r.y, r.y + 0.5 * r.h]) : null;
+    const pref = top >= bh + 2 * pad ? sat + (top - bh) / 2 : bot >= bh + 2 * pad ? r.y + r.h + (bot - bh) / 2 : (H - bh) / 2;
+    let best = pref, bs = Infinity;
+    for (let y = sat + 4; y <= H - sab - bh - 4 + 0.1; y += 4) {
+      const y0 = y - 30, y1 = y + bh + 30;                    // handle radius + label clearance
+      let sc = pts.filter(p => p[1] > y0 && p[1] < y1).length * 10 + Math.abs(y - pref) / H * 0.5;
+      if (zone) sc += Math.max(0, Math.min(y1, zone[1]) - Math.max(y0, zone[0])) / Math.max(1, zone[1] - zone[0]) * 5;
+      if (sc < bs) { bs = sc; best = y; }
+    }
+    banner.style.top = Math.max(sat + 4, Math.min(best, H - sab - bh - 4)) + "px"; banner.style.transform = "none"; banner.style.translate = "-50% 0";
   }
 
   // ---------- Camera ----------
@@ -188,6 +203,8 @@
       await attachStream();
       if (!auto || d) { cam.deviceId = deviceId; cam.label = d ? d.label : ""; saveCam(); }
       lensDirty = true;
+      if (calibrating) { tapped = []; draw(); }
+      if (calibrating || adjusting) refreshBanner();
     } catch (e) { $("camInfo").textContent = "Couldn't switch camera (" + (e && e.name || e) + ")."; }
     await refreshDevices();
   }
@@ -208,7 +225,7 @@
     if (track) track.applyConstraints({ advanced: [{ zoom: v }] }).catch(() => {});
     if (remember) { cam.zoom = cam.zoom || {}; cam.zoom[deviceKey()] = v; saveCam(); lensDirty = true; }
   }
-  $("zoom").oninput = e => applyZoom(e.target.value, true);
+  $("zoom").oninput = e => { applyZoom(e.target.value, true); const bz = $("bZoom"); if (bz) { bz.value = e.target.value; $("bZoomVal").textContent = $("zoomVal").textContent; } };
 
   function updateCamInfo() {
     const el = $("camInfo"); if (!el) return;
@@ -225,6 +242,19 @@
   function setViewScale(v) { state.viewScale = VIEWS.includes(v) ? v : 1; save(); layoutMedia(); syncUI(); draw(); const b = $("bView"); if (b) b.textContent = viewBtnLabel(); }
   function viewBtnLabel() { return "View " + Math.round(state.viewScale * 100) + "%"; }
   function viewBtnHtml() { return `<button id="bView" title="Shrink the picture to drag corners past its edge">${viewBtnLabel()}</button>`; }
+  // Camera tools row shown in the calibrate/adjust banners (the bottom bar is hidden there): Lens panel, view size, inline zoom.
+  function camToolsHtml() {
+    const zr = $("zoomRow"), zs = $("zoom"), hasZoom = !zr.hidden && !!track;
+    return `<div class="brow tools"><button id="bLens" title="Camera lens, zoom and view size">📷 Lens</button>${viewBtnHtml()}</div>` +
+      (hasZoom ? `<label class="bzoom">Zoom <input id="bZoom" type="range" min="${zs.min}" max="${zs.max}" step="${zs.step}" value="${zs.value}"><span id="bZoomVal">${$("zoomVal").textContent}</span></label>` : "");
+  }
+  function bindCamTools() {
+    bindViewBtn();
+    $("bLens").onclick = () => { togglePanel("lensPanel"); if (!$("lensPanel").hidden) refreshDevices(); };
+    const bz = $("bZoom");
+    if (bz) bz.oninput = () => { $("zoom").value = bz.value; applyZoom(bz.value, true); $("bZoomVal").textContent = $("zoomVal").textContent; };
+  }
+  function refreshBanner() { if (calibrating) promptCorner(); else if (adjusting) startAdjust(); }
   function bindViewBtn() { const b = $("bView"); if (b) b.onclick = () => setViewScale(VIEWS[(VIEWS.indexOf(state.viewScale) + 1) % VIEWS.length]); }
 
   function fallbackToMap() { $("startPanel").hidden = false; state.mode = "map"; syncUI(); draw(); }
@@ -238,9 +268,10 @@
   }
   function promptCorner() {
     const i = tapped.length;
-    showBanner(`<span class="step">Corner ${i + 1} of 4:</span> tap the <b>${CORNER_NAMES[i]}</b> table corner<br><span class="small">(${CORNER_HINT[i]}, standing at the ${G.SIDES[state.side]})</span><br>` +
-      `<button id="bSide">Change edge</button>${i ? '<button id="bUndo">Undo</button>' : ""}<button id="bCancel">Cancel</button>` + viewBtnHtml());
-    bindViewBtn();
+    showBanner(`<div class="bmsg"><span class="step">Corner ${i + 1} of 4:</span> tap the <b>${CORNER_NAMES[i]}</b> table corner<br><span class="small">(${CORNER_HINT[i]}, standing at the ${G.SIDES[state.side]})</span>` +
+      (i ? "" : `<br><span class="small tip">Table not all in view? Tap 📷 Lens for the wide lens / zoom.</span>`) + `</div>` +
+      `<div class="brow"><button id="bSide">Change edge</button>${i ? '<button id="bUndo">Undo</button>' : ""}<button id="bCancel">Cancel</button></div>` + camToolsHtml());
+    bindCamTools();
     $("bSide").onclick = () => togglePanel("layersPanel");
     if ($("bUndo")) $("bUndo").onclick = () => { tapped.pop(); promptCorner(); draw(); };
     $("bCancel").onclick = () => { calibrating = false; showBanner(null); syncUI(); draw(); };
@@ -295,7 +326,7 @@
     state.corners[dragIdx] = toNorm(p);
     drawLoupe(p); draw();
   });
-  const endDrag = () => { if (dragIdx >= 0) { dragIdx = -1; loupe.hidden = true; save(); draw(); } };
+  const endDrag = () => { if (dragIdx >= 0) { dragIdx = -1; loupe.hidden = true; save(); draw(); placeBanner(); } };
   stage.addEventListener("pointerup", endDrag); stage.addEventListener("pointercancel", endDrag);
 
   // Magnifier showing the camera image under the finger (source pixels, via the view rect; black beyond the picture).
