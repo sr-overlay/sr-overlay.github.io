@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 fill=%22%23333%22/%3E%3Crect y=%2212%22 width=%2216%22 height=%224%22 fill=%22%23ff3b30%22/%3E%3Crect width=%2216%22 height=%224%22 fill=%22%232f8cff%22/%3E%3Ccircle cx=%228%22 cy=%228%22 r=%222.5%22 fill=%22%23ffd60a%22/%3E%3C/svg%3E">
 <title>Steamroller 2026 Table Overlay</title>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="stage">
@@ -29,7 +29,6 @@
   <button id="adjustBtn">Adjust</button>
   <button id="flipBtn" title="Swap which edge you're standing at (rotate 180°)">Flip</button>
   <button id="freezeBtn">Freeze</button>
-  <button id="lensBtn" title="Camera lens, zoom and view size">Lens</button>
   <button id="layersBtn">Layers</button>
   <button id="infoBtn">Info</button>
 </footer>
@@ -43,22 +42,8 @@
   <button id="startCamBtn" class="primary">Start camera</button>
   <button id="startMapBtn">Map only (no camera)</button>
   <p id="camMsg" class="small"></p>
-  <p class="small tip">Can't fit the table? Try the wide lens, step back, hold phone higher, or use landscape.</p>
   <p class="small support"><a class="kofi" href="https://ko-fi.com/sroverlay" target="_blank" rel="noopener">☕ Support this free app on Ko-fi</a></p>
   <p class="small">Unofficial fan tool. Not affiliated with or endorsed by Steamforged Games.</p>
-</div>
-
-<div id="lensPanel" class="panel" hidden>
-  <h2>Camera &amp; view</h2>
-  <label>Camera / lens <select id="camSelect"></select></label>
-  <label id="zoomRow" hidden>Zoom <span id="zoomVal" class="small"></span>
-    <input id="zoom" type="range" min="1" max="1" step="0.1" value="1"></label>
-  <div class="segrow">View size
-    <span class="seg" id="viewSeg"><button data-view="1">100%</button><button data-view="0.85">85%</button><button data-view="0.7">70%</button></span></div>
-  <p class="small">A smaller view leaves a margin round the camera picture, so corners that are just out of shot can be dragged past its edge.</p>
-  <p class="small tip">Can't fit the table? Try the wide lens, step back, hold phone higher, or use landscape.</p>
-  <p class="small" id="camInfo"></p>
-  <button class="close">Close</button>
 </div>
 
 <div id="layersPanel" class="panel" hidden>
@@ -84,15 +69,14 @@
   <div id="infoNotes" class="small"></div>
   <p class="small">Legend: <b style="color:#ff3b30">red = Attacker</b> (1st player), <b style="color:#2f8cff">blue = Defender</b> (2nd player), <b style="color:#ffd60a">yellow = shared</b>. Circles = objectives (50/40mm), triangles = flags (Scenario Terrain), squares = caches (30mm). Dashed rings = 3" control range; dotted rings = 5" radius for choosing terrain for a flag.</p>
   <p class="small" id="infoSource"></p>
-  <p class="small">App version v3</p>
   <p class="small support"><a class="kofi" href="https://ko-fi.com/sroverlay" target="_blank" rel="noopener">☕ Support this free app on Ko-fi</a></p>
   <p class="small">Unofficial fan tool. Not affiliated with or endorsed by Steamforged Games.</p>
   <button class="close">Close</button>
 </div>
 
-<script src="scenarios.js?v=3"></script>
-<script src="geom.js?v=3"></script>
-<script src="render.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="scenarios.js"></script>
+<script src="geom.js"></script>
+<script src="render.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
