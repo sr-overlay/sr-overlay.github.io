@@ -9,7 +9,7 @@
 <title>Am I In The Zone?</title>
 <meta name="apple-mobile-web-app-title" content="Am I In The Zone">
 <meta name="application-name" content="Am I In The Zone">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div id="stage">
@@ -41,7 +41,7 @@
   <p>Take a photo of your table and see the scenario layout drawn on it. Which pack are you playing?</p>
   <button class="packBtn primary big" data-pack="sr2026">Steamroller 2026<span class="small">7 matched-play scenarios</span></button>
   <button class="packBtn primary big" data-pack="tftf">Tales from the Frontlines<span class="small">6 casual-play scenarios</span></button>
-  <p class="small">You can switch packs later from the start screen or Info.</p>
+  <p class="small">Your last pack is highlighted. You can come back here any time from Info → Change pack / Home.</p>
   <p class="small support"><a class="kofi" href="https://ko-fi.com/sroverlay" target="_blank" rel="noopener">☕ Support this free app on Ko-fi</a></p>
   <p class="small">Unofficial fan tool. Not affiliated with or endorsed by Steamforged Games.</p>
 </div>
@@ -57,6 +57,7 @@
   <p class="tip">Tip: tap <b>0.5×</b> in your camera to fit the whole table.</p>
   <button id="choosePhotoBtn">🖼️ Choose photo</button>
   <button id="startMapBtn">Map only (no photo)</button>
+  <button id="backToPhotoBtn" hidden>Back to my photo</button>
   <p class="small support"><a class="kofi" href="https://ko-fi.com/sroverlay" target="_blank" rel="noopener">☕ Support this free app on Ko-fi</a></p>
   <p class="small">Unofficial fan tool. Not affiliated with or endorsed by Steamforged Games.</p>
 </div>
@@ -86,18 +87,17 @@
   <p class="small">Legend: <b style="color:#ff3b30">red = Attacker</b> (1st player), <b style="color:#2f8cff">blue = Defender</b> (2nd player), <b style="color:#ffd60a">yellow = shared</b>. Circles = objectives (50/40mm), triangles = flags (Scenario Terrain), squares = caches (30mm). Dashed rings = 3" control range; dotted rings = 5" radius for choosing terrain for a flag.</p>
   <p class="small" id="infoSource"></p>
   <p class="small support"><a class="kofi" href="https://ko-fi.com/sroverlay" target="_blank" rel="noopener">☕ Support this free app on Ko-fi</a></p>
-  <p class="small">Unofficial fan tool. Not affiliated with or endorsed by Steamforged Games. <span id="version">v8</span></p>
-  <button id="infoPackBtn">Change scenario pack</button>
-  <button id="homeBtn">Start screen (new photo / map)</button>
+  <p class="small">Unofficial fan tool. Not affiliated with or endorsed by Steamforged Games. <span id="version">v9</span></p>
+  <button id="infoPackBtn">Change pack / Home</button>
   <button class="close">Close</button>
 </div>
 
 <div id="toast" hidden></div>
 
-<script src="scenarios.js?v=8"></script>
-<script src="tftf.js?v=8"></script>
-<script src="geom.js?v=8"></script>
-<script src="render.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="scenarios.js?v=9"></script>
+<script src="tftf.js?v=9"></script>
+<script src="geom.js?v=9"></script>
+<script src="render.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

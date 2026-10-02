@@ -1,7 +1,7 @@
 /* Warmachine table overlay (Steamroller 2026 / Tales from the Frontlines) — app controller (v7, photo-first). Plain JS, no dependencies. */
 (function () {
   "use strict";
-  const VERSION = "v8";
+  const VERSION = "v9";
   const PACKS = { sr2026: window.STEAMROLLER, tftf: window.TFTF };
   let DATA = window.STEAMROLLER;
   const G = window.Geom, R = window.Render;
@@ -58,9 +58,11 @@
   }
   document.querySelectorAll("[data-pack]").forEach(b => b.onclick = () => {
     setPack(b.dataset.pack); $("welcomePanel").hidden = true; document.body.classList.remove("welcome");
-    if (!src && state.mode !== "map") $("startPanel").hidden = false;
+    calibrating = adjusting = false; showBanner(null); $("startPanel").hidden = false;
+    resize();   // bars were hidden behind the welcome screen: re-measure them so the photo fits between them
   });
-  function showWelcome() { ["startPanel", "layersPanel", "infoPanel"].forEach(p => $(p).hidden = true); $("welcomePanel").hidden = false; document.body.classList.add("welcome"); }
+  // Welcome / pack choice: shown on EVERY page load (last-chosen pack highlighted), and from Info -> "Change pack / Home".
+  function showWelcome() { ["startPanel", "layersPanel", "infoPanel"].forEach(p => $(p).hidden = true); $("welcomePanel").hidden = false; document.body.classList.add("welcome"); syncUI(); }
   $("changePackBtn").onclick = showWelcome;
   $("infoPackBtn").onclick = showWelcome;
   buildScenarioOptions();
@@ -85,7 +87,8 @@
     $("infoNotes").innerHTML = (s.notes || []).concat(s.elements.filter(e => e.note).map(e => e.note)).map(n => `<p>${n}</p>`).join("");
     placeBanner();
     const pk = DATA.short || DATA.pack;
-    $("packName").textContent = pk; $("startTitle").textContent = pk + " Overlay"; document.title = pk + " Table Overlay";
+    $("backToPhotoBtn").hidden = !photo;
+    $("packName").textContent = pk; $("startTitle").textContent = pk + " Overlay";
     document.querySelectorAll("[data-pack]").forEach(b => b.classList.toggle("chosen", b.dataset.pack === state.pack));
     $("infoSource").textContent = `Source: ${DATA.pack} (${DATA.publisher}), p. ${s.source.page}. Deployment: Attacker ${DATA.deployment.attacker}", Defender ${DATA.deployment.defender}". Positions are measured from the table edge to the edge of the base.`;
   }
@@ -122,7 +125,7 @@
   $("retakeBtn").onclick = () => { $("fileCam").value = ""; $("fileCam").click(); };
   ["fileCam", "fileGal"].forEach(id => $(id).onchange = e => { const f = e.target.files && e.target.files[0]; if (f) loadPhotoFile(f); });
   $("startMapBtn").onclick = () => { $("startPanel").hidden = true; state.mode = "map"; save(); syncUI(); draw(); };
-  $("homeBtn").onclick = () => { ["layersPanel", "infoPanel"].forEach(p => $(p).hidden = true); calibrating = adjusting = false; showBanner(null); $("startPanel").hidden = false; syncUI(); draw(); };
+  $("backToPhotoBtn").onclick = () => { $("startPanel").hidden = true; state.mode = "camera"; save(); syncUI(); draw(); };
   $("saveBtn").onclick = () => saveImage();
   $("fitBtn").onclick = () => { resetView(); syncUI(); draw(); };
   function togglePanel(id) { ["layersPanel", "infoPanel"].forEach(p => { if (p !== id) $(p).hidden = true; }); $(id).hidden = !$(id).hidden; }
@@ -589,7 +592,7 @@
     }
   }
 
-  if (!state.pack && !params.get("pack")) showWelcome();
+  if (!params.get("pack")) showWelcome();
   syncUI(); resize();
   applyParams().catch(e => console.error(e)).then(() => { window.__ready = true; });
   window.__placeBanner = placeBanner;
