@@ -54,6 +54,6 @@ body.sd-bottom #scoringDrawer { font-size: 16px; }
 body.sd-bottom #scoringDrawer h2 { font-size: 24px; }
 body.sd-bottom.sd-big #scoringDrawer { font-size: 19px; }
 body.noui #scoringDrawer { display: none; }
-body.calib.sd-bottom #scoringDrawer { bottom: 0 !important; }
+
 body.creator #bottombar button { font-size: 13px; padding: 9px 6px; }
 body:not(.live) #freezeBtn, body.live #retakeBtn { display: none !important; }

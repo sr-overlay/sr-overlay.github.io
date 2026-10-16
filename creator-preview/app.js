@@ -78,7 +78,7 @@
     $("adjustBtn").classList.toggle("active", adjusting);
     document.body.classList.toggle("calib", (calibrating || adjusting) && !map);
     ["adjustBtn", "saveBtn"].forEach(id => $(id).disabled = map || !(photo || src === "live"));
-    $("freezeBtn").disabled = map || src !== "live"; $("srcToggle").textContent = src === "live" ? "Photo" : "Live"; $("scoringBtn").classList.toggle("active", sdOpen);
+    $("freezeBtn").disabled = map || src !== "live"; $("srcToggle").textContent = src === "live" ? "Photo" : "Live"; $("scoringBtn").classList.toggle("active", sdOpen); $("srcLiveBtn").classList.toggle("active", src === "live"); $("srcPhotoBtn").classList.toggle("active", src !== "live"); $("scoringBtn").textContent = sdOpen ? "Scoring ▾" : "Scoring ▴"; $("sdHide").textContent = sdOpen ? "▾" : "▴";
     document.body.classList.toggle("live", src === "live");
     renderScoring();
     document.querySelectorAll("[data-layer]").forEach(cb => cb.checked = !!state.layers[cb.dataset.layer]);
@@ -354,7 +354,7 @@
   const bars = { top: 0, bottom: 0 };
   function measureBars() {
     const t = $("topbar").offsetHeight, b = $("bottombar").offsetHeight;
-    if (t) bars.top = t; if (b) bars.bottom = b;
+    if (t) bars.top = t; if (b) bars.bottom = b; if (t) document.documentElement.style.setProperty("--tb", t + "px");
     bars.extra = sdExtraBottom();
   }
   function baseRect() {
@@ -475,14 +475,14 @@
   function resize() {
     const dpr = window.devicePixelRatio || 1, [w, h] = stageSize();
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); measureBars(); clampView(); layoutMedia(); syncUI(); draw();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); measureBars(); if (creator) { layoutDrawer(); } clampView(); layoutMedia(); syncUI(); draw();
   }
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", () => setTimeout(resize, 300));
 
   function mapHomography() {
     const [w, h] = stageSize();
-    const top = 70, bottom = 70, pad = 14;
+    const top = (bars.top || 56) + 10, bottom = (bars.bottom || 56) + (bars.extra || 0) + 24, pad = 14;
     const side = state.side, rot = side === "left" || side === "right";
     const tw = rot ? state.tableD : state.tableW, td = rot ? state.tableW : state.tableD;
     const k = Math.min((w - 2 * pad) / tw, (h - top - bottom) / td);
@@ -533,9 +533,9 @@
   }
   function edgeCaption(H) {
     const [w, h] = stageSize();
-    ctx.font = "13px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#bbb";
+    ctx.font = "13px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#e8d9b8";
     const bottomY = G.apply(H, ...G.cornerTableCoords(state.side, state.tableW, state.tableD)[0])[1];
-    ctx.fillText(`▲ you are at the ${G.SIDES[state.side]} ▲`, w / 2, Math.min(h - 58, bottomY + 18));
+    ctx.fillText(`▲ you are at the ${G.SIDES[state.side]} ▲`, w / 2, Math.min(h - 58 - (bars.extra || 0), bottomY + 16));
   }
 
   // ---------- Export (photo + overlay at photo resolution, looks the same as on screen) ----------
@@ -556,11 +556,11 @@
       c.restore();
     }
     const s = scenario();
-    c.fillStyle = "#111"; c.fillRect(0, b.h, b.w, capH);
+    c.fillStyle = "#3f2512"; c.fillRect(0, b.h, b.w, capH);
     c.textAlign = "left"; c.textBaseline = "middle";
-    c.font = "bold 12px system-ui, sans-serif"; c.fillStyle = "#fff";
+    c.font = "bold 12px system-ui, sans-serif"; c.fillStyle = "#e9b106";
     c.fillText(`${DATA.short || DATA.pack} · ${s.number}. ${s.name}`, 8, b.h + 10, b.w - 16);
-    c.font = "9px system-ui, sans-serif"; c.fillStyle = "#aaa";
+    c.font = "9px system-ui, sans-serif"; c.fillStyle = "#e8d9b8";
     c.fillText(`Standing at the ${G.SIDES[state.side]} · sr-overlay.github.io · unofficial fan tool`, 8, b.h + 22, b.w - 16);
     return out;
   }
@@ -586,8 +586,8 @@
   // ================= Content Creator mode (#creator) =================
   // Same overlay as the standard app, plus a Scoring drawer (verbatim PDF rules text) and a Photo / Live video switch.
   let creator = false, sdOpen = true, sdBig = false;
-  const wideMQ = window.matchMedia("(min-width: 900px)");
-  function sdExtraBottom() { return creator && sdOpen && !wideMQ.matches && !$("scoringDrawer").hidden && !document.body.classList.contains("welcome") ? $("scoringDrawer").offsetHeight : 0; }
+  const wideMQ = window.matchMedia("(min-width: 900px), (orientation: landscape) and (min-width: 640px)");
+  function sdExtraBottom() { return creator && !wideMQ.matches && !$("scoringDrawer").hidden && !document.body.classList.contains("welcome") ? $("scoringDrawer").offsetHeight : 0; }
   function setCreator(on, quiet) {
     creator = !!on;
     document.body.classList.toggle("creator", creator);
@@ -638,18 +638,34 @@
     layoutDrawer();
   }
   function layoutDrawer() {
-    const d = $("scoringDrawer"), show = creator && sdOpen && !document.body.classList.contains("welcome");
+    const d = $("scoringDrawer"), wide = wideMQ.matches, welcome = document.body.classList.contains("welcome");
+    const show = creator && !welcome && (sdOpen || !wide), calibNow = document.body.classList.contains("calib"), open = sdOpen && !(calibNow && !wide);   // phone: sheet folds to its strip while placing corners          // phone: a collapsed strip stays so it can be re-opened
     d.hidden = !show;
-    document.body.classList.toggle("sd-open", show);
-    document.body.classList.toggle("sd-side", show && wideMQ.matches);
-    document.body.classList.toggle("sd-bottom", show && !wideMQ.matches);
+    document.body.classList.toggle("sd-open", show && open);
+    document.body.classList.toggle("sd-min", show && !open);
+    document.body.classList.toggle("sd-side", show && wide);
+    document.body.classList.toggle("sd-bottom", show && !wide);
     document.body.classList.toggle("sd-big", sdBig);
-    if (show && !wideMQ.matches) { const b = $("bottombar").offsetHeight; d.style.bottom = b + "px"; } else d.style.bottom = "";
+    d.style.height = ""; d.style.bottom = "";
+    if (show && !wide) {
+      const bb = $("bottombar").offsetHeight || bars.bottom || 0; d.style.bottom = bb + "px";
+      if (open) {
+        // photo on top (full width, correct aspect, capped), the quick reference gets ALL the rest below it
+        const [W, H] = stageSize(), [vw, vh] = srcDims();
+        const availAll = H - (bars.top || 0) - bb, aspect = vw && vh ? vw / vh : 1;
+        const cap = availAll * (sdBig ? 0.36 : 0.46), ph = Math.max(120, Math.min(W / aspect, cap));
+        sdPhotoH = Math.round(ph + 6);
+        d.style.height = Math.max(150, Math.round(availAll - sdPhotoH)) + "px";
+      }
+    }
     bars.extra = sdExtraBottom();
   }
+  let sdPhotoH = 0;
   function setDrawer(open) { sdOpen = open; layoutDrawer(); resize(); }
   $("scoringBtn").onclick = () => setDrawer(!sdOpen);
-  $("sdHide").onclick = () => setDrawer(false);
+  $("sdHide").onclick = () => setDrawer(!sdOpen);
+  $("sdGrip").onclick = () => setDrawer(!sdOpen);
+  document.querySelector("#scoringDrawer .sdHead > div").onclick = () => { if (!wideMQ.matches) setDrawer(!sdOpen); };
   $("sdSize").onclick = () => { sdBig = !sdBig; layoutDrawer(); resize(); };
 
   // ---------- Live video (creator mode) ----------
@@ -690,6 +706,8 @@
     if (src === "live") { liveCorners = state.photoCorners; stopLive(); if (photo) { src = "photo"; state.photoCorners = savedPhotoCorners; syncUI(); draw(); } else { src = null; $("startPanel").hidden = false; syncUI(); draw(); } }
     else startLive();
   };
+  $("srcLiveBtn").onclick = () => { if (src !== "live") startLive(); };
+  $("srcPhotoBtn").onclick = () => { if (src === "live") $("srcToggle").onclick(); else if (!photo) { $("startPanel").hidden = false; syncUI(); } };
   $("saveBtn").addEventListener("click", e => { if (src === "live") { e.stopImmediatePropagation(); if (freezeLive()) saveImage(); } }, true);
 
   // ---------- Test / demo hooks ----------
@@ -713,6 +731,7 @@
       if (params.get("adjust") === "1") startAdjust(); else if (params.get("cal") === "1") startCalibration(false);
       syncUI(); draw();
     }
+    resize();
   }
 
   if (!params.get("pack")) showWelcome();
