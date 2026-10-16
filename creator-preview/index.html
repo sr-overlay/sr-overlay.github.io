@@ -45,7 +45,7 @@
   <h1>Am I In The Zone?</h1>
   <p>Take a photo of your table and see the scenario layout drawn on it. Which pack are you playing?</p>
   <div class="creatorToggle"><span>Mode</span><button id="modeNormal" type="button">Standard</button><button id="modeCreator" type="button">🎬 Content Creator</button></div>
-  <p class="small" id="creatorHint">Content Creator mode shows each scenario's full scoring text beside your photo or live camera, handy for streams and videos.</p>
+  <p class="small" id="creatorHint">Content Creator mode shows each scenario's quick-reference scoring beside your photo or live camera, handy for streams and videos.</p>
   <button class="packBtn primary big" data-pack="sr2026">Steamroller 2026<span class="small">7 matched-play scenarios</span></button>
   <button class="packBtn primary big" data-pack="tftf">Tales from the Frontlines<span class="small">6 casual-play scenarios</span></button>
   <p class="small">Your last pack is highlighted. You can come back here any time from Info → Change pack / Home.</p>
@@ -105,13 +105,14 @@
   <div class="sdHead"><div><div class="sdPack" id="sdPack"></div><h2 id="sdTitle"></h2></div>
     <div class="sdBtns"><button id="sdSize" title="Bigger / smaller text">A±</button><button id="sdHide" title="Hide scoring">✕</button></div></div>
   <div id="sdBody"></div>
-  <p class="sdCredit">Rules text © Steamforged Games / Warmachine — from the official <span id="sdDoc"></span> PDF; unofficial fan tool. <a href="https://warmachine.gg/pages/event-resources" target="_blank" rel="noopener">Official downloads</a></p>
+  <p class="sdCredit">Quick reference condensed by hand; rules text © Steamforged Games / Warmachine — full wording from the official <span id="sdDoc"></span> PDF; unofficial fan tool. <a href="https://warmachine.gg/pages/event-resources" target="_blank" rel="noopener">Official downloads</a></p>
 </aside>
 <div id="toast" hidden></div>
 
 <script src="scenarios.js?v=9"></script>
 <script src="tftf.js?v=9"></script>
 <script src="scoring.js?v=1"></script>
+<script src="quickref.js?v=1"></script>
 <script src="geom.js?v=9"></script>
 <script src="render.js?v=9"></script>
 <script src="app.js?v=9"></script>

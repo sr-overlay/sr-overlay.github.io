@@ -610,18 +610,29 @@
     $("sdTitle").textContent = s.name;
     $("sdDoc").textContent = state.pack === "tftf" ? "Tales from the Frontlines" : "Steamroller 2026";
     let h = "";
-    if (!sc) h = '<p class="sdMissing">No scoring text found for this scenario.</p>';
+    const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\[\[(.+?)\]\]/g, '<span class="chip">$1</span>');
+    const para = p => typeof p === "string" ? `<p>${esc(p)}</p>` : `<p><b>${esc(p[0])}:</b> ${esc(p[1])}</p>`;
+    const qr = (window.QUICKREF[state.pack] || {})[state.scenarioId];
+    if (qr) {
+      h += '<div class="qrTag">Quick reference</div>';
+      qr.forEach(c => {
+        h += `<section class="qr qr-${c.kind}"><h3><i class="qrIc qrIc-${c.kind}" aria-hidden="true"></i>${esc(c.title)}</h3><div class="qrBody">`;
+        if (c.lead) h += `<p class="qrLead">${md(c.lead)}</p>`;
+        h += "<ul>" + c.items.map(i => `<li>${md(i)}</li>`).join("") + "</ul></div></section>";
+      });
+    }
+    if (!sc) h += '<p class="sdMissing">No scoring text found for this scenario.</p>';
     else {
+      h += '<details class="fullText"><summary>Full official text</summary>';
       sc.sections.forEach(sec => {
-        h += `<section><h3>${esc(sec.title)}</h3>`;
-        const para = p => typeof p === "string" ? `<p>${esc(p)}</p>` : `<p><b>${esc(p[0])}:</b> ${esc(p[1])}</p>`;
+        h += `<section><h4>${esc(sec.title)}</h4>`;
         sec.paras.forEach(p => { h += para(p); });
         if (sec.bullets.length) h += "<ul>" + sec.bullets.map(b => `<li>${esc(b)}</li>`).join("") + "</ul>";
         (sec.after || []).forEach(p => { h += para(p); });
         h += "</section>";
       });
       if (sc.note) h += `<p class="sdNote">${esc(sc.note)}</p>`;
-      h += `<p class="sdPage">${esc(state.pack === "tftf" ? "Tales from the Frontlines" : "Steamroller 2026")} PDF, p. ${sc.page}</p>`;
+      h += `<p class="sdPage">${esc(state.pack === "tftf" ? "Tales from the Frontlines" : "Steamroller 2026")} PDF, p. ${sc.page}</p></details>`;
     }
     $("sdBody").innerHTML = h;
     layoutDrawer();
